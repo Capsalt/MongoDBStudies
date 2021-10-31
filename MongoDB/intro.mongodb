@@ -1,0 +1,43 @@
+//===============================
+//             TEMEL KOMUTLAR
+//===============================
+
+show dbs;
+
+use("kisiler");
+
+db;
+
+use("kisiler");
+db.dropDatabase();
+
+use("kisiler");
+db.createCollection("ogrenciler");
+
+use("kisiler");
+db.ogrenciler.insertOne({"ad":"Veli","yas":32,"maas":3200});
+
+
+use("kisiler");
+db.ogrenciler.find();
+
+use("kisiler");
+db.ogrenciler.drop();
+
+use("kisiler");
+db.ogrenciler.insertMany([
+ {"ad": "Ahmet", "soyad": "Can", "yas": 21},
+ {"ad": "Ali", "soyad": "Can", "yas": 51},
+ {"ad": "Veli", "soyad": "Gel", "yas": 22}]);
+
+
+use("kisiler");
+db.ogrenciler.insertOne({"tarih":new Date()});
+
+use("kisiler");
+db.ogrenciler.insertOne({   "ad":"oli",  "soyad":"cin", "tarih": new ISODate() });
+
+
+use("kisiler");
+let ay =new ISODate().getMonth();
+db.ogrenciler.insertOne({   "ad":"meryem",  "soyad":"berk", "tarih": ay });
