@@ -162,3 +162,6 @@ db.fiyatlar.find(  {  } ,   {   urunAdi:1,  fiyat:1 ,_id:0} ) .sort(  {fiyat:1} 
 use("urunler");
 
 db.fiyatlar.find(   {},   {urunAdi:1, _id:0 ,fiyat:1  }  ).sort( {urunAdi:-1}, {fiyat:1});
+
+
+

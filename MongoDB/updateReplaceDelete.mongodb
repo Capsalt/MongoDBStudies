@@ -1,0 +1,183 @@
+// =================================================================
+//            findOneAndUpdate - findOneAndReplace
+// =================================================================
+
+// A - findOneAndReplace() 
+// ----------------------------
+//   1-) belirtilen koşullara uyan ilk sorguyu bulur ve degistirir. 
+//   2-) Komut icerisinde belirtilen kisimlari guncellerken bos birakilan 
+//       alanlari kaldirir. (API'lerdeki PUT metoduna benzetilebilir).
+//   3-) Islem sonunda VSCODE ilgili dokumanin guncellenMEmiş halini gosterir.
+//   4-) SYNTAX
+//        db.collection.findOneAndReplace( {filter}, {replacement}, {options} )   
+      
+// B - findOneAndUpdate() 
+// ----------------------------
+// /  1-) Belirtilen koşullara uyan ilk sorguyu bulur ve degistirir. 
+//   2-) Komut icerisinde belirtilen kismilari guncellerken bos birakilan 
+//       alanlari modifiye etmez  (API'lerdeki PACTH metoduna benzetilebilir).
+//   3-) komutun kosul kismindan sonra degislikileri gerceklestirmek icin bir 
+//       atomic operator kullanilir. ($set (direk değer verilirse), $inc(arttırma azaltma), $mul (çarpma)vb.)
+//   4)  Islem sonunda VSCODE ilgili dokumanin guncellenMEmiş halini gosterir.
+//   5-) SYNTAX
+//       db.collection.findOneAndUpdate( {filter}, {update}, {options} ) ******************
+// =================================================================
+
+// -----------------------------------------------------------------
+// 1) "medya" adinda bir veritabani ve icerisinde "personel" 
+// adinda bir collection tanimlayalim.  
+-----------------------------------------------------------------
+use("medya");
+//db.createCollection("personel");
+
+// -----------------------------------------------------------------
+// 2) asagidaki dokumanlari collection'a kaydedelim.   
+// -----------------------------------------------------------------use("medya");
+use("medya");
+db.createCollection( "sarkicilar");
+db.sarkicilar.insertMany([
+{"isim":"Ali Bak", "maas": 5000, "iseBaslama": new Date('2014-03-01')},
+{"isim":"Can Tak", "maas": 7500, "iseBaslama": new Date('2011-03-04')},
+{"isim":"Veli Gel", "maas": 3550, "iseBaslama": new Date('2013-03-01')},
+{"isim":"Can Yak", "maas": 4800, "iseBaslama": new Date('2011-09-30')},
+{"isim":"Veli Git", "maas": 7200, "iseBaslama": new Date('2007-12-06')},
+{"isim":"Ali Han", "maas": 5250, "iseBaslama": new Date('2004-11-21')},
+{"isim":"Ayse Gel", "maas": 10500, "iseBaslama": new Date('1990-07-23')},
+{"isim":"Su Ak", "maas": 3300, "iseBaslama": new Date('1999-03-30')} ]);
+
+//-----------------------------------------------------------------
+// 3) Maasi 5000 'den az olan ilk personelin maasini 6000 TL yapiniz.
+//-----------------------------------------------------------------
+use("medya")
+db.sarkicilar.findOneAndReplace({maas:{$lt:5000}},{maas:6000})
+// compass ta bak isim vs gitti sadece maaş kaldı çünkü replace.buradaki sonuç eski hali oluyor
+//-----------------------------------------------------------------
+// 4) Maasi 5250 olan personelin maasini 5555, ismini "Ceylan" ve 
+//   ise baslama tarihini su an yapalim.
+//-----------------------------------------------------------------
+use( "medya")
+db.sarkicilar.findOneAndReplace({maas:5250},{maas:5555, isim: "Ceylan", iseBaslama: "suan"})
+//-----------------------------------------------------------------
+// 5) Maasi en az olan personelin adini, noname, ise baslama tarihini
+//    nodate, maasini ise 0 yapiniz.
+//-----------------------------------------------------------------
+use("medya")
+db.sarkicilar.findOneAndReplace({},{isim: "noname",iseBaslama: "nodate",maas:0},{sort:{maas:1}})
+// ÖNCEKİ DERSTE SORT cevaba yansımıştı, sıralı yazdırmıştı, find.sort, burada sırala ilkini al yaptırıyoruz, sıralı yazdırmaz, bir eleman alıyoruz
+// buradaki sort ta $ olsa da olur olmasa da
+
+
+//-----------------------------------------------------------------
+// 6) Maasi 7500 olan personelin maasini 8000 yapiniz, diger kisimlari
+//    degistirmeyiniz.
+//-----------------------------------------------------------------
+use("medya");
+db.sarkicilar.findOneAndUpdate({maas:7500},{$set:{maas:8000}})
+
+//  (or kullanırsak İLK uyanı alıyor, çünkü ONEupdate)
+//maası 5250 veya ismi Veli Git olan personelin maasini 9000 , ismini CEMİL yap
+use("medya");
+db.sarkicilar.findOneAndUpdate(  { $or : [   {maas:5250}, {isim:"Veli Git"} ]},{ $set:  { maas: 9000, isim :"Cemil "} }        )
+
+// -----------------------------------------------------------------
+// 7) Maasi 4800 olan personelin maasina %10 zam yapiniz, 
+//     diger kisimlari degistirmeyiniz.update
+// bu sorudan önce compass a git ilk noname li verinin maaşını 7500 yap, sistem onu seçsin-----------------------------------------------------------------
+use("medya")
+db.sarkicilar.findOneAndUpdate({maas:4800},{$mul:{maas:1.1}})
+
+// -----------------------------------------------------------------
+// 8) Maasi 3550 olan personelin maasina 500 TL zam yapiniz, 
+//     diger kismilari degistirmeyiniz.
+// azaltmak için -500 yazabiliriz-----------------------------------------------------------------
+use("medya")
+db.sarkicilar.findOneAndUpdate({maas:3550},{$inc:{maas:500}})
+//-----------------------------------------------------------------
+// 9) Maasi 15000 olan personelin Adini "Mehmet Can" ve ise baslama 
+//    tarihini su an olarak degisitriniz.Eger boyle bir dokuman yok 
+//    ise yeni kayit olarak ekleyelim.
+-------------------------------------
+use("medya")
+db.sarkicilar.findOneAndUpdate({maas:15000},
+{$set:{isim: "Mehmet Can", iseBaslama:new Date()}},{upsert:true})
+
+// NOT: Eger guncelleme (replace veya update) isleminde sorgu ile 
+//      eslesmeme durumu oldugunda dokumanin olusturulmasi istenirse
+//      {upsert:true} kullanilmalidir. burada null döndürür, compass ta yeni kayıt ekler
+
+//=================================================================
+//           updateOne - updateMany
+//
+//  update komutlari ile de bir dokumandaki bigilerin bir kismi yada
+//  tamami guncellenebilir. update komutlari findOneAndUpdate komutuna
+//  gore daha hizli calisir. Bunun sebebi bu komutlarin sorguyu cevap
+//  olarak dondurmemesidir. Bu komutlar sadece istatistik olarak kisa 
+//  bilgiler dondurur.sorgunun elemanları lazım değilse
+//=================================================================
+
+/-----------------------------------------------------------------
+// 10) ismi Can Tak olan personelin maasini 15000'e guncelleyin.
+/-----------------------------------------------------------------
+use("medya")
+db.sarkicilar.updateOne({isim: "Can Tak"},{$set:{maas:15000}})
+
+//-----------------------------------------------------------------
+// 11) maasi 15000 olan personellerin dokumanina prim:1000 bilgisini ekleyiniz.birkaç kişinin maaşının 15000 olduğundan emin ol önce
+//-----------------------------------------------------------------
+use("medya");
+db.sarkicilar.updateMany({maas:15000},{$set:{prim:1000}})
+
+// -----------------------------------------------------------------
+// 12) maasi 5000 olan personellerin dokumanina prim:200 bilgisini
+// /     eger boyle bir personel yok ise (upsert:true) yeni bir kayit aciniz.
+//yeni açılacağı için id li yazdırdı consol da
+// -----------------------------------------------------------------
+use("medya");
+db.sarkicilar.updateMany({maas:5000},{$set:{prim:200}},{upsert:true})
+
+//12.b)maasi 12125 olan varsa yoksa ekle(yeni id eklendiğini görmek için yaptık)
+use("medya");
+db.sarkicilar.updateMany({maas:12125},{$set:{prim:200}},{upsert:true})
+
+-----------------------------------------------------------------
+// 13) maasi 7000 den az olan personellerin dokumanina prim:500 bilgisini ekleyiniz.
+//-----------------------------------------------------------------
+use("medya")
+db.sarkicilar.updateMany({maas:{$lt:7000}},{$set:{prim:500}})
+//13.b)maasi 70den küçük olanlara ekledik
+use("medya")
+db.sarkicilar.updateMany({maas:{$lt:70}},{$set:{prim:500}},{upsert:true})
+
+//key adını değiştirmek. bütün dökümanların field ad larını değiştirelim
+// use("medya");
+// db.sarkicilar.updateMany({}, {$rename:{"maas":"gelir"}}, {upsert:true});//varsa da yoksa da bak
+// //2.yol
+// use("medya");
+// db.sarkicilar.update({}, {$rename:{"maas":"gelir"}}, {multi:true});
+// 3.yol
+// use("medya");
+// db.sarkicilar.update({}, {$rename:{"maas":"gelir"}},false,true);
+//4.yol
+use("medya");
+db.sarkicilar.updateMany({}, {$rename:{"gelir":"maas"}});
+
+// =================================================================
+//           deleteOne - deleteMany - (update-remove =depreceated=kullanımdan kalktı)
+// =================================================================
+
+// -----------------------------------------------------------------
+// 14) ismi Mehmet Can olan kaydi siliniz. 
+// -----------------------------------------------------------------
+use("medya")
+db.sarkicilar.deleteOne({ad: "Mehmet Can"})
+
+// -----------------------------------------------------------------
+// 15) maasi 15000 olan dokumanlari siliniz. 
+// -----------------------------------------------------------------
+use("medya");
+db.sarkicilar.deleteMany({maas:15000})
+// -----------------------------------------------------------------
+// 16) Tum dokumanlari siliniz. 
+use("medya");
+db.sarkicilar.deleteMany({})
+
